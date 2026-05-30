@@ -7,7 +7,7 @@ def _register(client, email="login@example.com", password="supersecret"):
 def test_login_success_returns_token(client):
     _register(client)
     resp = client.post(
-        "api/v1/auth/token",
+        "api/v1/auth/login",
         data={"username": "login@example.com", "password": "supersecret"}
     )    
     assert resp.status_code == 200

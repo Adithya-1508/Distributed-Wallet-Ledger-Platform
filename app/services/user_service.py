@@ -15,31 +15,31 @@ class UserService:
         self.db = db
         self.users = UserRepository(db)
 
-        def register(self, data: UserCreate) -> User:
-            if self.users.get_by_email(data.email) is not None:
-                raise EmailAlreadyExistsError(data.email)
+    def register(self, data: UserCreate) -> User:
+        if self.users.get_by_email(data.email) is not None:
+            raise EmailAlreadyExistsError(data.email)
 
 
-            user = self.users.create(
-                name = data.name,
-                email = data.email,
-                password_hash= hash_password(data.password), 
-            )
+        user = self.users.create(
+            name = data.name,
+            email = data.email,
+            password_hash= hash_password(data.password), 
+        )
 
-            try:
-                self.db.commit()
-            except IntegrityError as exc:
-                self.db.rollback()
-                raise EmailAlreadyExistsError(data.email) from exc
+        try:
+            self.db.commit()
+        except IntegrityError as exc:
+            self.db.rollback()
+            raise EmailAlreadyExistsError(data.email) from exc
 
-            self.db.refresh(user)
-            return user            
+        self.db.refresh(user)
+        return user           
 
 
-def authenticate(self, email: str, password:str) -> User | None:
-    user = self.users.get_by_email(email)
-    if user is None:
-        return None
-    if not verify_password(password, user.password_hash):
-        return None
-    return user        
+    def authenticate(self, email: str, password:str) -> User | None:
+        user = self.users.get_by_email(email)
+        if user is None:
+            return None
+        if not verify_password(password, user.password_hash):
+            return None
+        return user        
