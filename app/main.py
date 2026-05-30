@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 
-app = FastAPI(title="Wallet Ledger Platform")
+from app.api.routes import users
 
+app = FastAPI(title="Wallet Ledger Platform")
+app.include_router(users.router, prefix="/api/v1")
 
 @app.get("/health")
 def health() -> dict[str, str]:
