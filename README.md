@@ -69,14 +69,14 @@ API docs: http://localhost:8000/docs
 
 
 
-- [x] Phase 0 - Foundation (skeleton, Docker, config, migrations, TDD harness)
-- [ ] Phase 1 - Users & wallets
-- [ ] Phase 2 - Deposit
-- [ ] Phase 3 - Transfer (core)
-- [ ] Phase 4 - Withdraw
-- [ ] Phase 5 - Outbox + Kafka + notification consumer
-- [ ] Phase 6 - Analytics & reconciliation consumers
-- [ ] Phase 7 - Redis cache + transaction history
-- [ ] Phase 8 - Airflow jobs
-- [ ] Phase 9 - Test hardening + observability
-- [ ] Phase 10 - Docker image, Kubernetes, GCP deploy
+- [x] Phase 0 — Foundation (skeleton, Docker, config, migrations, TDD harness)
+- [x] Phase 1 — Users & wallets
+- [ ] Phase 2 — Deposit
+- [ ] Phase 3 — Transfer (core)
+- [ ] Phase 4 — Withdraw
+- [ ] Phase 5 — Outbox + Kafka + notification consumer
+- [ ] Phase 6 — Analytics & reconciliation consumers
+- [ ] Phase 7 — Redis cache + transaction history
+- [ ] Phase 8 — Airflow jobs
+- [ ] Phase 9 — Test hardening + observability
+- [ ] Phase 10 — Docker image, Kubernetes, GCP deploy

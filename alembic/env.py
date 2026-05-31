@@ -13,7 +13,7 @@ from app.core.config import settings
 from app.db.base import Base
 
 #Import your models here so autogenerate can see them. 
-#from app.db import Models
+from app.db import models
 
 config.set_main_option("sqlalchemy.url", settings.database_url)
 
