@@ -2,7 +2,7 @@
 
 
 
-A distributed wallet & real-time payments backend — a mini-fintech core inspired by
+A distributed wallet & real-time payments backend - a mini-fintech core inspired by
 digital banks. Built to demonstrate production-grade backend engineering: double-entry
 accounting, ACID-safe money movement, event-driven architecture, and a test-driven workflow.
 
