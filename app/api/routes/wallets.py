@@ -6,7 +6,9 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.db.models.user import User
 from app.db.session import get_db
+from app.schemas.deposit import DepositRequest, DepositResponse
 from app.schemas.wallet import BalanceRead, WalletCreate, WalletRead
+from app.services.ledger_service import CurrencyMismatchError, LedgerService
 from app.services.wallet_service import (
     WalletAccessDeniedError,
     WalletAlreadyExistsError,
@@ -46,3 +48,34 @@ def get_balance(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Wallet not found."
         )
+
+
+@router.post("/{wallet_id}/deposit", response_model=DepositResponse)
+def deposit(
+    wallet_id: uuid.UUID,
+    data: DepositRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> DepositResponse:
+    try:
+        txn, wallet = LedgerService(db).deposit(
+            wallet_id=wallet_id,
+            requester_id=current_user.id,
+            data=data,
+        )
+    except (WalletNotFoundError, WalletAccessDeniedError):
+        # Same 404 for "missing" and "not yours" -- don't leak existence.
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Wallet not found."
+        )
+    except CurrencyMismatchError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Deposit currency does not match the wallet.",
+        )
+
+    return DepositResponse(
+        transaction_id=txn.id,
+        available_balance=wallet.available_balance,
+        currency=wallet.currency,
+    )
