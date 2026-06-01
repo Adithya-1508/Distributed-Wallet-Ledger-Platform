@@ -8,6 +8,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    Identity,
     String,
     func,
 )
@@ -42,6 +43,12 @@ class LedgerEntry(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    # Monotonic, DB-assigned insertion order. Unlike created_at (which is the
+    # transaction timestamp and so ties for entries in the same txn) this gives
+    # a strict total order -- the canonical way to sort an append-only ledger.
+    seq: Mapped[int] = mapped_column(
+        BigInteger, Identity(), nullable=False, index=True
     )
     transaction_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
