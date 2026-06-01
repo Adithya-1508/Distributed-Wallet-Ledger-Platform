@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wallet-config
+data:
+  KAFKA_BOOTSTRAP_SERVERS: "redpanda:9092"
+  KAFKA_TOPIC_TRANSACTIONS: "transactions.events"
+  REDIS_URL: "redis://redis:6379/0"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: wallet-secret
+type: Opaque
+# stringData = paste plain values; Kubernetes base64-encodes them for you.
+# CHANGE THESE before any real deploy.
+stringData:
+  DATABASE_URL: "postgresql+psycopg://wallet:wallet@postgres:5432/wallet"
+  JWT_SECRET: "change-me-use-a-long-random-secret"

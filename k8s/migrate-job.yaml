@@ -1,0 +1,19 @@
+# Run once (or on each deploy) to apply Alembic migrations before the API starts.
+# `kubectl apply -f k8s/migrate-job.yaml` then wait for completion.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: wallet-migrate
+spec:
+  backoffLimit: 4
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: wallet-ledger:latest
+          imagePullPolicy: IfNotPresent
+          command: ["alembic", "upgrade", "head"]
+          envFrom:
+            - configMapRef: { name: wallet-config }
+            - secretRef: { name: wallet-secret }

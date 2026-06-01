@@ -8,7 +8,7 @@ accounting, ACID-safe money movement, event-driven architecture, and a test-driv
 
 
 
-> **Status:** 🚧 In active development, built phase by phase. See the [Roadmap](#roadmap).
+> **Status:** ✅ Feature-complete — phases 0–10 shipped. See the [Roadmap](#roadmap).
 
 
 
@@ -43,7 +43,7 @@ Airflow → nightly analytics + reconciliation
 
 
 Python 3 · FastAPI · PostgreSQL · SQLAlchemy + Alembic · Redpanda (Kafka-compatible) · Redis · Airflow ·
-Docker · Kubernetes · GCP · pytest (TDD)
+Docker · Kubernetes (k3s) · Oracle Cloud · pytest (TDD)
 
 
 
@@ -122,6 +122,20 @@ uv run pytest                        # everything, incl. the Redpanda end-to-end
 - **Prometheus metrics** at `GET /metrics` (request count + latency histogram, labelled by route template).
 - **Probes:** `GET /health` (liveness) and `GET /health/ready` (readiness - checks the DB, returns 503 if it's down). Wired to Kubernetes probes in phase 10.
 
+## Deploy (Kubernetes / k3s)
+
+Production manifests live in [`k8s/`](k8s/) — the whole stack runs on a single-node
+**k3s** cluster (the free path: Oracle Cloud's Always-Free Ampere A1 ARM VM, no
+managed services needed):
+
+- a multi-stage **`Dockerfile`** (slim, non-root) — one image for the API, workers, and jobs
+- **API** Deployment with `/health` (liveness) + `/health/ready` (readiness) probes
+- **worker** Deployments (publisher, notification consumer, analytics consumer)
+- a **migration** Job (`alembic upgrade head`) and **CronJobs** for reconciliation +
+  analytics — the Kubernetes-native version of the Airflow DAGs
+
+See [`k8s/README.md`](k8s/README.md) for the build + deploy walkthrough.
+
 ## Roadmap
 
 
@@ -138,4 +152,4 @@ uv run pytest                        # everything, incl. the Redpanda end-to-end
 - [x] Phase 7 - Redis balance cache (invalidate-on-write) + paginated transaction history
 - [x] Phase 8 - Airflow DAGs (reconciliation + analytics snapshot, opt-in & isolated)
 - [x] Phase 9 - Hardening (concurrency double-spend test) + observability (JSON logs, request IDs, Prometheus metrics, liveness/readiness)
-- [ ] Phase 10 - Docker image, Kubernetes, GCP deploy
+- [x] Phase 10 - Docker image + k3s manifests (Oracle Cloud free-tier deploy)

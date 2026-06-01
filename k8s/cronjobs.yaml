@@ -1,0 +1,45 @@
+# The Kubernetes-native version of the Airflow DAGs: scheduled batch jobs that
+# run the same job modules in the app image.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: wallet-reconciliation
+spec:
+  schedule: "0 2 * * *" # daily 02:00
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: reconciliation
+              image: wallet-ledger:latest
+              imagePullPolicy: IfNotPresent
+              command: ["python", "-m", "app.jobs.run_reconciliation"]
+              envFrom:
+                - configMapRef: { name: wallet-config }
+                - secretRef: { name: wallet-secret }
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: wallet-analytics-snapshot
+spec:
+  schedule: "0 3 * * *" # daily 03:00
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: analytics-snapshot
+              image: wallet-ledger:latest
+              imagePullPolicy: IfNotPresent
+              command: ["python", "-m", "app.jobs.run_analytics_snapshot"]
+              envFrom:
+                - configMapRef: { name: wallet-config }
+                - secretRef: { name: wallet-secret }
