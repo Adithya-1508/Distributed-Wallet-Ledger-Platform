@@ -52,7 +52,7 @@ Docker · Kubernetes · GCP · pytest (TDD)
 
 
 ```bash
-docker compose up -d            # 1. start infrastructure (Postgres + Kafka)
+docker compose up -d            # 1. start infrastructure (Postgres + Kafka + Redis)
 uv sync                         # 2. install dependencies
 uv run alembic upgrade head     # 3. apply database migrations
 uv run uvicorn app.main:app --reload   # 4. run the API
@@ -102,7 +102,7 @@ uv run pytest                        # everything, incl. the Kafka end-to-end te
   - [x] 5a — Transactional outbox (event written in the same commit as the ledger)
   - [x] 5b — Publisher worker + Kafka + notification consumer (at-least-once, idempotent consumer)
 - [x] Phase 6 — Analytics consumer (idempotent rollups) & reconciliation (ledger-vs-balance drift check)
-- [ ] Phase 7 — Redis cache + transaction history
+- [x] Phase 7 — Redis balance cache (invalidate-on-write) + paginated transaction history
 - [ ] Phase 8 — Airflow jobs
 - [ ] Phase 9 — Test hardening + observability
 - [ ] Phase 10 — Docker image, Kubernetes, GCP deploy

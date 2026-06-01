@@ -9,6 +9,25 @@ from app.db.base import Base
 from app.db import models
 from app.db.session import get_db
 from app.main import app
+from app.cache.deps import get_balance_cache
+from app.cache.redis_cache import BalanceCache
+
+
+class FakeRedis:
+    """Minimal in-memory stand-in for redis-py (get/setex/delete)."""
+
+    def __init__(self) -> None:
+        self.store: dict[str, str] = {}
+
+    def get(self, key):
+        return self.store.get(key)
+
+    def setex(self, key, ttl, value):
+        self.store[key] = value
+
+    def delete(self, *keys):
+        for key in keys:
+            self.store.pop(key, None)
 
 
 #WE ARE TESTING WITH A TEST DB AND POINTING THE ORM AND APP TO IT
@@ -44,13 +63,22 @@ def db() -> Session:
 
 
 @pytest.fixture
-def client(db) -> TestClient:
+def fake_redis() -> FakeRedis:
+    return FakeRedis()
+
+
+@pytest.fixture
+def client(db, fake_redis) -> TestClient:
     def override_get_db():
         yield db
 
+    def override_get_cache():
+        return BalanceCache(fake_redis)
+
 
     app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as c:    
+    app.dependency_overrides[get_balance_cache] = override_get_cache
+    with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()    
 

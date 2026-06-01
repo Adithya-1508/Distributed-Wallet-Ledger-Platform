@@ -42,3 +42,19 @@ class LedgerRepository:
                 )
             )
         )
+
+    def get_entries_for_wallet(
+        self, wallet_id: uuid.UUID, *, limit: int = 20, offset: int = 0
+    ) -> list[LedgerEntry]:
+        """Newest-first ledger legs touching this wallet (paginated). Ordered by
+        the monotonic `seq` so entries created in the same transaction (identical
+        created_at) still sort deterministically by insertion order."""
+        return list(
+            self.db.scalars(
+                select(LedgerEntry)
+                .where(LedgerEntry.wallet_id == wallet_id)
+                .order_by(LedgerEntry.seq.desc())
+                .limit(limit)
+                .offset(offset)
+            )
+        )
