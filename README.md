@@ -88,6 +88,7 @@ with the app's SQLAlchemy 2.0, so it can't share the app image:
 
 ```bash
 docker compose --profile airflow up -d   # Airflow UI -> http://localhost:8080
+docker compose --profile airflow down    # stop it (a plain `down` skips profile-gated services)
 # the standalone admin password is printed in the airflow container logs
 ```
 
