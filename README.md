@@ -52,7 +52,7 @@ Docker · Kubernetes · GCP · pytest (TDD)
 
 
 ```bash
-docker compose up -d            # 1. start infrastructure (Postgres)
+docker compose up -d            # 1. start infrastructure (Postgres + Kafka)
 uv sync                         # 2. install dependencies
 uv run alembic upgrade head     # 3. apply database migrations
 uv run uvicorn app.main:app --reload   # 4. run the API
@@ -62,6 +62,22 @@ uv run pytest                   # 5. run the tests
 
 
 API docs: http://localhost:8000/docs
+
+### Event-driven workers
+
+After the API is up, run the two workers (each in its own terminal):
+
+```bash
+uv run python -m app.events.run_publisher   # drains the outbox table -> Kafka
+uv run python -m app.events.run_consumer    # consumes events -> notifications
+```
+
+### Tests
+
+```bash
+uv run pytest -m "not integration"   # fast unit/API tests (no Docker needed)
+uv run pytest                        # everything, incl. the Kafka end-to-end test (needs Docker)
+```
 
 
 
@@ -76,7 +92,7 @@ API docs: http://localhost:8000/docs
 - [x] Phase 4 — Withdraw (DEBIT wallet / CREDIT external funding, balance guard, idempotency)
 - [ ] Phase 5 — Outbox + Kafka + notification consumer
   - [x] 5a — Transactional outbox (event written in the same commit as the ledger)
-  - [ ] 5b — Publisher worker + Kafka + notification consumer
+  - [x] 5b — Publisher worker + Kafka + notification consumer (at-least-once, idempotent consumer)
 - [ ] Phase 6 — Analytics & reconciliation consumers
 - [ ] Phase 7 — Redis cache + transaction history
 - [ ] Phase 8 — Airflow jobs
