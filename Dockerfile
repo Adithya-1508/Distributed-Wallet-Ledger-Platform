@@ -6,7 +6,12 @@ FROM python:3.11-slim AS builder
 # uv from its official image (pin a tag in real life for reproducibility)
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
+# Use the base image's system Python (not a uv-managed standalone one) so the
+# venv copied into the runtime stage points at an interpreter that exists there.
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_PREFERENCE=only-system \
+    UV_PYTHON_DOWNLOADS=never
 WORKDIR /app
 
 # Deps only first, so this layer caches unless pyproject/uv.lock change.
