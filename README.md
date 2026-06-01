@@ -73,7 +73,7 @@ API docs: http://localhost:8000/docs
 - [x] Phase 1 — Users & wallets
 - [x] Phase 2 — Deposit (double-entry ledger, row locking, atomic commit)
 - [x] Phase 3 — Transfer (deadlock-safe lock ordering, idempotency keys, insufficient-funds guard)
-- [ ] Phase 4 — Withdraw
+- [x] Phase 4 — Withdraw (DEBIT wallet / CREDIT external funding, balance guard, idempotency)
 - [ ] Phase 5 — Outbox + Kafka + notification consumer
 - [ ] Phase 6 — Analytics & reconciliation consumers
 - [ ] Phase 7 — Redis cache + transaction history
