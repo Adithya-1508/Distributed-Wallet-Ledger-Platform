@@ -31,7 +31,7 @@ accounting, ACID-safe money movement, event-driven architecture, and a test-driv
 
 ```
 Client → FastAPI → PostgreSQL (source of truth)
-                 → Outbox table → Kafka → consumers (notify / analytics / reconcile)
+                 → Outbox table → Redpanda → consumers (notify / analytics / reconcile)
                  → Redis (fast reads)
 Airflow → nightly analytics + reconciliation
 ```
@@ -42,7 +42,7 @@ Airflow → nightly analytics + reconciliation
 
 
 
-Python 3 · FastAPI · PostgreSQL · SQLAlchemy + Alembic · Kafka · Redis · Airflow ·
+Python 3 · FastAPI · PostgreSQL · SQLAlchemy + Alembic · Redpanda (Kafka-compatible) · Redis · Airflow ·
 Docker · Kubernetes · GCP · pytest (TDD)
 
 
@@ -52,7 +52,7 @@ Docker · Kubernetes · GCP · pytest (TDD)
 
 
 ```bash
-docker compose up -d            # 1. start infrastructure (Postgres + Kafka + Redis)
+docker compose up -d            # 1. start infrastructure (Postgres + Redpanda + Redis)
 uv sync                         # 2. install dependencies
 uv run alembic upgrade head     # 3. apply database migrations
 uv run uvicorn app.main:app --reload   # 4. run the API
@@ -68,7 +68,7 @@ API docs: http://localhost:8000/docs
 After the API is up, run the two workers (each in its own terminal):
 
 ```bash
-uv run python -m app.events.run_publisher           # drains the outbox table -> Kafka
+uv run python -m app.events.run_publisher           # drains the outbox table -> Redpanda
 uv run python -m app.events.run_consumer            # events -> notifications
 uv run python -m app.events.run_analytics_consumer  # events -> analytics rollups
 ```
@@ -84,7 +84,7 @@ uv run python -m app.jobs.run_reconciliation
 
 ```bash
 uv run pytest -m "not integration"   # fast unit/API tests (no Docker needed)
-uv run pytest                        # everything, incl. the Kafka end-to-end test (needs Docker)
+uv run pytest                        # everything, incl. the Redpanda end-to-end test (needs Docker)
 ```
 
 

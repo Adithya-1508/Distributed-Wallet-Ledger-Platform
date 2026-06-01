@@ -31,5 +31,5 @@ dev = [
 pythonpath = ["."]
 testpaths = ["tests"]
 markers = [
-    "integration: requires Docker (spins up Kafka via testcontainers)",
+    "integration: requires Docker (spins up a Kafka-protocol broker via testcontainers)",
 ]
