@@ -50,6 +50,12 @@ class Transaction(Base):
         default=TransactionStatus.PENDING,
     )
     currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    # Client-supplied dedupe key. Unique so a retried request can't create a
+    # second transaction. NULL allowed (deposits don't use it yet) and Postgres
+    # permits many NULLs under a unique index.
+    idempotency_key: Mapped[str | None] = mapped_column(
+        String(255), unique=True, nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
