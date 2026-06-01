@@ -5,3 +5,5 @@ from app.db.models.wallet import Wallet
 from app.db.models.transaction import Transaction
 from app.db.models.ledger_entry import LedgerEntry
 from app.db.models.outbox import OutboxEvent
+from app.db.models.transaction_stat import TransactionStat
+from app.db.models.processed_event import ProcessedEvent

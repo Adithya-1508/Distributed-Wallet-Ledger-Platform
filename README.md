@@ -68,8 +68,16 @@ API docs: http://localhost:8000/docs
 After the API is up, run the two workers (each in its own terminal):
 
 ```bash
-uv run python -m app.events.run_publisher   # drains the outbox table -> Kafka
-uv run python -m app.events.run_consumer    # consumes events -> notifications
+uv run python -m app.events.run_publisher           # drains the outbox table -> Kafka
+uv run python -m app.events.run_consumer            # events -> notifications
+uv run python -m app.events.run_analytics_consumer  # events -> analytics rollups
+```
+
+Reconciliation is a job (scheduled by Airflow in phase 8), runnable on demand —
+it recomputes every wallet from the ledger and exits non-zero on any drift:
+
+```bash
+uv run python -m app.jobs.run_reconciliation
 ```
 
 ### Tests
@@ -93,7 +101,7 @@ uv run pytest                        # everything, incl. the Kafka end-to-end te
 - [ ] Phase 5 — Outbox + Kafka + notification consumer
   - [x] 5a — Transactional outbox (event written in the same commit as the ledger)
   - [x] 5b — Publisher worker + Kafka + notification consumer (at-least-once, idempotent consumer)
-- [ ] Phase 6 — Analytics & reconciliation consumers
+- [x] Phase 6 — Analytics consumer (idempotent rollups) & reconciliation (ledger-vs-balance drift check)
 - [ ] Phase 7 — Redis cache + transaction history
 - [ ] Phase 8 — Airflow jobs
 - [ ] Phase 9 — Test hardening + observability
