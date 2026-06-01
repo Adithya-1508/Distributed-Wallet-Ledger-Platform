@@ -31,6 +31,24 @@ class WalletRepository:
         )
 
 
+    def get_for_update_ordered(
+        self, wallet_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, "Wallet | None"]:
+        """Lock several wallet rows FOR UPDATE in a deterministic order.
+
+        Locking always in ascending id order means two transfers in opposite
+        directions (A->B and B->A) can never each hold one lock while waiting
+        for the other -- no circular wait, so no deadlock. Missing ids map to
+        None (no row to lock).
+        """
+        result: dict[uuid.UUID, "Wallet | None"] = {}
+        for wallet_id in sorted(set(wallet_ids)):
+            result[wallet_id] = self.db.scalar(
+                select(Wallet).where(Wallet.id == wallet_id).with_for_update()
+            )
+        return result
+
+
     def get_by_user_and_currency(self,user_id:uuid.UUID,currency:str) -> Wallet | None:
         return self.db.scalar(
             select(Wallet).where(

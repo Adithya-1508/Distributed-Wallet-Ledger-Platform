@@ -72,7 +72,7 @@ API docs: http://localhost:8000/docs
 - [x] Phase 0 — Foundation (skeleton, Docker, config, migrations, TDD harness)
 - [x] Phase 1 — Users & wallets
 - [x] Phase 2 — Deposit (double-entry ledger, row locking, atomic commit)
-- [ ] Phase 3 — Transfer (core)
+- [x] Phase 3 — Transfer (deadlock-safe lock ordering, idempotency keys, insufficient-funds guard)
 - [ ] Phase 4 — Withdraw
 - [ ] Phase 5 — Outbox + Kafka + notification consumer
 - [ ] Phase 6 — Analytics & reconciliation consumers
