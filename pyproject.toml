@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "alembic>=1.18.4",
+    "confluent-kafka>=2.5.0",
     "email-validator>=2.3.0",
     "fastapi>=0.136.3",
     "psycopg[binary]>=3.3.4",
@@ -21,9 +22,13 @@ dependencies = [
 dev = [
     "httpx>=0.28.1",
     "pytest>=9.0.3",
+    "testcontainers[kafka]>=4.0",
 ]
 
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+markers = [
+    "integration: requires Docker (spins up Kafka via testcontainers)",
+]
