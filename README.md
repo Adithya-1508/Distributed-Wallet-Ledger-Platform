@@ -94,11 +94,16 @@ docker compose --profile airflow up -d   # Airflow UI -> http://localhost:8080
 The DAGs (`wallet_reconciliation`, `wallet_analytics_snapshot`) shell out to the
 job modules rather than importing app code. Running them against the live DB is
 wired via Kubernetes (a `KubernetesPodOperator` on the app image) in phase 10;
-the local Airflow is for authoring and validating the DAGs. Validate they parse:
+the local Airflow is for authoring and validating the DAGs. Validate they parse
+(a DB-free DagBag check — the throwaway container has no metadata DB, so
+DB-backed CLI commands like `airflow dags list` won't work here):
 
 ```bash
-docker compose --profile airflow run --rm airflow airflow dags list-import-errors
+docker compose --profile airflow run --rm airflow python -c "from airflow.models import DagBag; b = DagBag('/opt/airflow/dags', include_examples=False); print(b.import_errors or 'no import errors'); print(sorted(b.dags))"
 ```
+
+To browse them in the UI instead, `docker compose --profile airflow up -d` (the
+standalone container migrates its own metadata DB on startup) and open :8080.
 
 ### Tests
 
