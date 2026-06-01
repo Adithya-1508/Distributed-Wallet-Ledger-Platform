@@ -10,6 +10,7 @@ dependencies = [
     "email-validator>=2.3.0",
     "fastapi>=0.136.3",
     "psycopg[binary]>=3.3.4",
+    "prometheus-client>=0.20",
     "pwdlib[argon2]>=0.3.0",
     "pydantic-settings>=2.14.1",
     "pyjwt>=2.13.0",
@@ -32,4 +33,8 @@ pythonpath = ["."]
 testpaths = ["tests"]
 markers = [
     "integration: requires Docker (spins up a Kafka-protocol broker via testcontainers)",
+]
+filterwarnings = [
+    # Starlette's TestClient nags about httpx; a test-only dep concern, not ours.
+    "ignore:Using `httpx`",
 ]

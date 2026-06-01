@@ -114,6 +114,13 @@ uv run pytest                        # everything, incl. the Redpanda end-to-end
 
 
 
+## Observability
+
+- **Structured JSON logs** with a per-request `request_id` stitched through every line.
+- **`X-Request-ID`** is honoured if supplied (gateway trace), else minted, and returned on the response.
+- **Prometheus metrics** at `GET /metrics` (request count + latency histogram, labelled by route template).
+- **Probes:** `GET /health` (liveness) and `GET /health/ready` (readiness — checks the DB, returns 503 if it's down). Wired to Kubernetes probes in phase 10.
+
 ## Roadmap
 
 
@@ -129,5 +136,5 @@ uv run pytest                        # everything, incl. the Redpanda end-to-end
 - [x] Phase 6 — Analytics consumer (idempotent rollups) & reconciliation (ledger-vs-balance drift check)
 - [x] Phase 7 — Redis balance cache (invalidate-on-write) + paginated transaction history
 - [x] Phase 8 — Airflow DAGs (reconciliation + analytics snapshot, opt-in & isolated)
-- [ ] Phase 9 — Test hardening + observability
+- [x] Phase 9 — Hardening (concurrency double-spend test) + observability (JSON logs, request IDs, Prometheus metrics, liveness/readiness)
 - [ ] Phase 10 — Docker image, Kubernetes, GCP deploy

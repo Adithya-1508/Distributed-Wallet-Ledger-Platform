@@ -193,12 +193,12 @@ def transfer(
         )
     except SameWalletTransferError:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Cannot transfer to the same wallet.",
         )
     except InsufficientFundsError:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Insufficient funds.",
         )
 
@@ -239,7 +239,7 @@ def withdraw(
         )
     except InsufficientFundsError:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Insufficient funds.",
         )
 
