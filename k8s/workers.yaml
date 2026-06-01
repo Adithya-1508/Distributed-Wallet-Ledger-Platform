@@ -1,0 +1,79 @@
+# The three event workers. Same image as the API; each overrides the command.
+# They don't serve HTTP, so no Service / no probes (k8s restarts on crash).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wallet-publisher
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wallet-publisher
+  template:
+    metadata:
+      labels:
+        app: wallet-publisher
+    spec:
+      containers:
+        - name: publisher
+          image: wallet-ledger:latest
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "app.events.run_publisher"]
+          envFrom:
+            - configMapRef: { name: wallet-config }
+            - secretRef: { name: wallet-secret }
+          resources:
+            requests: { cpu: "50m", memory: "128Mi" }
+            limits: { cpu: "250m", memory: "256Mi" }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wallet-notification-consumer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wallet-notification-consumer
+  template:
+    metadata:
+      labels:
+        app: wallet-notification-consumer
+    spec:
+      containers:
+        - name: notification-consumer
+          image: wallet-ledger:latest
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "app.events.run_consumer"]
+          envFrom:
+            - configMapRef: { name: wallet-config }
+            - secretRef: { name: wallet-secret }
+          resources:
+            requests: { cpu: "50m", memory: "128Mi" }
+            limits: { cpu: "250m", memory: "256Mi" }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wallet-analytics-consumer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wallet-analytics-consumer
+  template:
+    metadata:
+      labels:
+        app: wallet-analytics-consumer
+    spec:
+      containers:
+        - name: analytics-consumer
+          image: wallet-ledger:latest
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "app.events.run_analytics_consumer"]
+          envFrom:
+            - configMapRef: { name: wallet-config }
+            - secretRef: { name: wallet-secret }
+          resources:
+            requests: { cpu: "50m", memory: "128Mi" }
+            limits: { cpu: "250m", memory: "256Mi" }

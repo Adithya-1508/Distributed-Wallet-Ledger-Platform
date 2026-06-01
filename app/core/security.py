@@ -2,7 +2,6 @@
 
 #Encoding
 
-from pygments.token import Error
 from datetime import datetime, timedelta, timezone
 from pwdlib import PasswordHash
 import jwt
