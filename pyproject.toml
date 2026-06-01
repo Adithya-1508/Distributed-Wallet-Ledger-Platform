@@ -23,7 +23,7 @@ dependencies = [
 dev = [
     "httpx>=0.28.1",
     "pytest>=9.0.3",
-    "testcontainers[redpanda]>=4.0",
+    "testcontainers[kafka]>=4.0",
 ]
 
 
@@ -31,5 +31,5 @@ dev = [
 pythonpath = ["."]
 testpaths = ["tests"]
 markers = [
-    "integration: requires Docker (spins up Redpanda via testcontainers)",
+    "integration: requires Docker (spins up a Kafka-protocol broker via testcontainers)",
 ]
