@@ -9,6 +9,7 @@ from app.db.session import get_db
 from app.schemas.deposit import DepositRequest, DepositResponse
 from app.schemas.transfer import TransferRequest, TransferResponse
 from app.schemas.wallet import BalanceRead, WalletCreate, WalletRead
+from app.schemas.withdrawal import WithdrawalRequest, WithdrawalResponse
 from app.services.ledger_service import (
     CurrencyMismatchError,
     InsufficientFundsError,
@@ -134,4 +135,42 @@ def transfer(
         status=txn.status.value,
         available_balance=sender.available_balance,
         currency=sender.currency,
+    )
+
+
+@router.post("/{wallet_id}/withdraw", response_model=WithdrawalResponse)
+def withdraw(
+    wallet_id: uuid.UUID,
+    data: WithdrawalRequest,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> WithdrawalResponse:
+    try:
+        txn, wallet = LedgerService(db).withdraw(
+            wallet_id=wallet_id,
+            requester_id=current_user.id,
+            data=data,
+            idempotency_key=idempotency_key,
+        )
+    except (WalletNotFoundError, WalletAccessDeniedError):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Wallet not found."
+        )
+    except CurrencyMismatchError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Withdrawal currency does not match the wallet.",
+        )
+    except InsufficientFundsError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Insufficient funds.",
+        )
+
+    return WithdrawalResponse(
+        transaction_id=txn.id,
+        status=txn.status.value,
+        available_balance=wallet.available_balance,
+        currency=wallet.currency,
     )
