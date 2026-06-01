@@ -47,5 +47,21 @@ services:
       timeout: 3s
       retries: 5
 
+  airflow:
+    # Opt-in: `docker compose --profile airflow up -d`. Runs ISOLATED -- Airflow
+    # pins older deps that conflict with the app's SQLAlchemy 2.0, so it can't
+    # share the app image. Here it's for authoring/viewing the DAGs (UI :8080);
+    # real task execution against the DB is wired via k8s in phase 10.
+    image: apache/airflow:2.10.3
+    container_name: wallet-airflow
+    profiles: ["airflow"]
+    command: standalone
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    volumes:
+      - ./dags:/opt/airflow/dags
+    ports:
+      - "8080:8080"
+
 volumes:
   walletdata:
