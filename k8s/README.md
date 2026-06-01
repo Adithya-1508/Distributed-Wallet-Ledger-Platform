@@ -1,6 +1,6 @@
 # Deploy on Kubernetes (k3s)
 
-These manifests run the whole platform on a single-node **k3s** cluster — the
+These manifests run the whole platform on a single-node **k3s** cluster - the
 free path is Oracle Cloud's Always-Free **Ampere A1 ARM** VM (up to 4 OCPU /
 24 GB RAM). No managed cloud services required; everything (Postgres, Redpanda,
 Redis, the API, the workers, the scheduled jobs) runs in-cluster.
@@ -37,7 +37,7 @@ docker build -t wallet-ledger:latest .
 docker save wallet-ledger:latest | sudo k3s ctr images import -
 ```
 
-(Or push to a registry — Docker Hub / GHCR / Oracle OCIR — and set the image
+(Or push to a registry - Docker Hub / GHCR / Oracle OCIR - and set the image
 reference + `imagePullPolicy: Always` in the manifests.)
 
 ## 3. Deploy (order matters)
@@ -65,5 +65,5 @@ curl localhost:8000/health/ready       # {"status":"ready","db":"ok"}
 For real external access, expose `wallet-api` via the bundled Traefik ingress or
 change its Service to `type: NodePort`.
 
-> ⚠️ Edit `config.yaml` first — set a real `JWT_SECRET` and DB password. The
+> ⚠️ Edit `config.yaml` first - set a real `JWT_SECRET` and DB password. The
 > values shipped here are local-dev defaults.
