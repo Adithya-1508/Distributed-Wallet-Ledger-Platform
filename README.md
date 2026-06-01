@@ -25,16 +25,66 @@ accounting, ACID-safe money movement, event-driven architecture, and a test-driv
 
 
 
-## Architecture (target)
+## Architecture
 
 
 
+```mermaid
+flowchart TB
+    Client(["Client / API consumer"])
+    PROM(["Prometheus"])
+
+    subgraph SVC["FastAPI service"]
+        REST["REST API<br/>users · wallets · deposit · transfer · withdraw · history"]
+        OBS["Observability<br/>/health · /health/ready · /metrics · JSON logs + request-id"]
+    end
+
+    REDIS[("Redis<br/>balance cache<br/>invalidate-on-write")]
+
+    subgraph PG["PostgreSQL — source of truth"]
+        LEDGER[("Double-entry ledger<br/>users · wallets · transactions · ledger_entries")]
+        OUTBOX[("Transactional outbox<br/>outbox_events")]
+        STATS[("Analytics rollup<br/>transaction_stats")]
+        INBOX[("Consumer dedupe<br/>processed_events")]
+    end
+
+    REDPANDA{{"Redpanda — Kafka API<br/>topic: transactions.events"}}
+
+    subgraph WORKERS["Background workers"]
+        PUB["Outbox publisher"]
+        NOTIF["Notification consumer"]
+        ANALYTICS["Analytics consumer"]
+    end
+
+    subgraph JOBS["Scheduled jobs — Airflow DAGs / k8s CronJobs"]
+        RECON["Reconciliation<br/>balance == Σcredit − Σdebit"]
+        SNAP["Analytics snapshot"]
+    end
+
+    Client -->|HTTPS| REST
+    REST -->|"money op: ledger + outbox in ONE commit"| LEDGER
+    REST --> OUTBOX
+    REST <-->|cache-aside| REDIS
+
+    PUB -->|poll unpublished| OUTBOX
+    PUB -->|"produce (at-least-once)"| REDPANDA
+    REDPANDA -->|consumer group A| NOTIF
+    REDPANDA -->|consumer group B| ANALYTICS
+    ANALYTICS -->|idempotent rollup| STATS
+    ANALYTICS -->|dedupe| INBOX
+
+    RECON -->|recompute from| LEDGER
+    SNAP -->|read| STATS
+
+    OBS -.->|"scrape /metrics"| PROM
 ```
-Client → FastAPI → PostgreSQL (source of truth)
-                 → Outbox table → Redpanda → consumers (notify / analytics / reconcile)
-                 → Redis (fast reads)
-Airflow → nightly analytics + reconciliation
-```
+
+**How it fits together**
+
+- **Write path** — `deposit` / `transfer` / `withdraw` write the balanced ledger entries **and** an outbox event in a *single* DB transaction (`SELECT … FOR UPDATE` serialises per-wallet writes), then invalidate the Redis balance cache.
+- **Event path** — the publisher drains the outbox to Redpanda (at-least-once); two independent consumer groups fan out — notifications and analytics — with the analytics consumer deduping on `processed_events` so rollups stay exactly-once.
+- **Integrity** — the reconciliation job recomputes every wallet straight from the ledger (`balance == Σcredit − Σdebit`) and alerts on drift; the ledger is the source of truth, the wallet balance is just a cache.
+- **Deployment** — one image (multi-stage `Dockerfile`) runs the API, the three workers, and the jobs, on a single-node **k3s** cluster on Oracle Cloud's free ARM tier (see [`k8s/`](k8s/)).
 
 
 
@@ -52,11 +102,11 @@ Docker · Kubernetes (k3s) · Oracle Cloud · pytest (TDD)
 
 
 ```bash
-docker compose up -d            # 1. start infrastructure (Postgres + Redpanda + Redis)
-uv sync                         # 2. install dependencies
-uv run alembic upgrade head     # 3. apply database migrations
-uv run uvicorn app.main:app --reload   # 4. run the API
-uv run pytest                   # 5. run the tests
+docker compose up -d            # 1. start infrastructure (Postgres + Redpanda + Redis)
+uv sync                         # 2. install dependencies
+uv run alembic upgrade head     # 3. apply database migrations
+uv run uvicorn app.main:app --reload   # 4. run the API
+uv run pytest                   # 5. run the tests
 ```
 
 
