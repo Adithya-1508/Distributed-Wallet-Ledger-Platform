@@ -75,6 +75,8 @@ API docs: http://localhost:8000/docs
 - [x] Phase 3 — Transfer (deadlock-safe lock ordering, idempotency keys, insufficient-funds guard)
 - [x] Phase 4 — Withdraw (DEBIT wallet / CREDIT external funding, balance guard, idempotency)
 - [ ] Phase 5 — Outbox + Kafka + notification consumer
+  - [x] 5a — Transactional outbox (event written in the same commit as the ledger)
+  - [ ] 5b — Publisher worker + Kafka + notification consumer
 - [ ] Phase 6 — Analytics & reconciliation consumers
 - [ ] Phase 7 — Redis cache + transaction history
 - [ ] Phase 8 — Airflow jobs

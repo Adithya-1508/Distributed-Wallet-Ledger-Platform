@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -7,6 +8,7 @@ from app.db.models.ledger_entry import EntryType
 from app.db.models.transaction import Transaction, TransactionType
 from app.db.models.wallet import Wallet
 from app.repositories.ledger_repo import LedgerRepository
+from app.repositories.outbox_repo import OutboxRepository
 from app.repositories.transaction_repo import TransactionRepository
 from app.repositories.wallet_repo import WalletRepository
 from app.schemas.deposit import DepositRequest
@@ -46,6 +48,40 @@ class LedgerService:
         self.wallets = WalletRepository(db)
         self.transactions = TransactionRepository(db)
         self.ledger = LedgerRepository(db)
+        self.outbox = OutboxRepository(db)
+
+    def _record_event(
+        self,
+        txn: Transaction,
+        *,
+        amount: int,
+        wallet_id: uuid.UUID,
+        counterparty_wallet_id: uuid.UUID | None = None,
+    ) -> None:
+        """Write the domain event into the outbox in the SAME transaction as the
+        ledger. Either both commit or neither -- so no event is ever emitted for
+        a transaction that rolled back, and any committed transaction always has
+        its event sitting ready to publish. Solves the dual-write problem.
+        """
+        self.outbox.add_event(
+            aggregate_type="transaction",
+            aggregate_id=txn.id,
+            event_type="transaction.completed",
+            payload={
+                "transaction_id": str(txn.id),
+                "type": txn.type.value,
+                "status": txn.status.value,
+                "currency": txn.currency,
+                "amount": amount,
+                "wallet_id": str(wallet_id),
+                "counterparty_wallet_id": (
+                    str(counterparty_wallet_id)
+                    if counterparty_wallet_id is not None
+                    else None
+                ),
+                "occurred_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
 
     def deposit(
         self,
@@ -95,11 +131,13 @@ class LedgerService:
         # 4. Update the cached balance (safe: we hold the row lock).
         wallet.available_balance += amount
 
-        # 5. Mark COMPLETED and commit everything atomically.
+        # 5. Mark COMPLETED, record the outbox event, commit atomically.
         self.transactions.mark_completed(txn)
+        self._record_event(txn, amount=amount, wallet_id=wallet.id)
         self.db.commit()
 
-        # TODO(phase-5): publish a TransactionCompleted event via the outbox.
+        # Event is now in the outbox; a publisher worker drains it to Kafka
+        # (phase-5b). The write above is atomic with the ledger.
 
         self.db.refresh(wallet)
         self.db.refresh(txn)
@@ -180,8 +218,14 @@ class LedgerService:
         sender.available_balance -= amount
         recipient.available_balance += amount
 
-        # 6. Mark COMPLETED and commit atomically.
+        # 6. Mark COMPLETED, record the outbox event, commit atomically.
         self.transactions.mark_completed(txn)
+        self._record_event(
+            txn,
+            amount=amount,
+            wallet_id=sender.id,
+            counterparty_wallet_id=recipient.id,
+        )
         try:
             self.db.commit()
         except IntegrityError:
@@ -194,7 +238,8 @@ class LedgerService:
                     return existing, self.wallets.get_by_id(sender_wallet_id)
             raise
 
-        # TODO(phase-5): publish a TransactionCompleted event via the outbox.
+        # Event is now in the outbox; a publisher worker drains it to Kafka
+        # (phase-5b). The write above is atomic with the ledger.
 
         self.db.refresh(sender)
         self.db.refresh(txn)
@@ -260,8 +305,9 @@ class LedgerService:
         # 4. Update the cached balance (safe: we hold the row lock).
         wallet.available_balance -= amount
 
-        # 5. Mark COMPLETED and commit atomically.
+        # 5. Mark COMPLETED, record the outbox event, commit atomically.
         self.transactions.mark_completed(txn)
+        self._record_event(txn, amount=amount, wallet_id=wallet.id)
         try:
             self.db.commit()
         except IntegrityError:
@@ -272,7 +318,8 @@ class LedgerService:
                     return existing, self.wallets.get_by_id(wallet_id)
             raise
 
-        # TODO(phase-5): publish a TransactionCompleted event via the outbox.
+        # Event is now in the outbox; a publisher worker drains it to Kafka
+        # (phase-5b). The write above is atomic with the ledger.
 
         self.db.refresh(wallet)
         self.db.refresh(txn)
