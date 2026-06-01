@@ -73,7 +73,7 @@ uv run python -m app.events.run_consumer            # events -> notifications
 uv run python -m app.events.run_analytics_consumer  # events -> analytics rollups
 ```
 
-Reconciliation is a job (scheduled by Airflow in phase 8), runnable on demand —
+Reconciliation is a job (scheduled by Airflow in phase 8), runnable on demand -
 it recomputes every wallet from the ledger and exits non-zero on any drift:
 
 ```bash
@@ -83,7 +83,7 @@ uv run python -m app.jobs.run_reconciliation
 ### Orchestration (Airflow)
 
 Reconciliation and the analytics snapshot are scheduled as Airflow DAGs in `dags/`.
-Airflow is **opt-in** and runs isolated — it pins older dependencies that conflict
+Airflow is **opt-in** and runs isolated - it pins older dependencies that conflict
 with the app's SQLAlchemy 2.0, so it can't share the app image:
 
 ```bash
@@ -96,7 +96,7 @@ The DAGs (`wallet_reconciliation`, `wallet_analytics_snapshot`) shell out to the
 job modules rather than importing app code. Running them against the live DB is
 wired via Kubernetes (a `KubernetesPodOperator` on the app image) in phase 10;
 the local Airflow is for authoring and validating the DAGs. Validate they parse
-(a DB-free DagBag check — the throwaway container has no metadata DB, so
+(a DB-free DagBag check - the throwaway container has no metadata DB, so
 DB-backed CLI commands like `airflow dags list` won't work here):
 
 ```bash
@@ -120,22 +120,22 @@ uv run pytest                        # everything, incl. the Redpanda end-to-end
 - **Structured JSON logs** with a per-request `request_id` stitched through every line.
 - **`X-Request-ID`** is honoured if supplied (gateway trace), else minted, and returned on the response.
 - **Prometheus metrics** at `GET /metrics` (request count + latency histogram, labelled by route template).
-- **Probes:** `GET /health` (liveness) and `GET /health/ready` (readiness — checks the DB, returns 503 if it's down). Wired to Kubernetes probes in phase 10.
+- **Probes:** `GET /health` (liveness) and `GET /health/ready` (readiness - checks the DB, returns 503 if it's down). Wired to Kubernetes probes in phase 10.
 
 ## Roadmap
 
 
 
-- [x] Phase 0 — Foundation (skeleton, Docker, config, migrations, TDD harness)
-- [x] Phase 1 — Users & wallets
-- [x] Phase 2 — Deposit (double-entry ledger, row locking, atomic commit)
-- [x] Phase 3 — Transfer (deadlock-safe lock ordering, idempotency keys, insufficient-funds guard)
-- [x] Phase 4 — Withdraw (DEBIT wallet / CREDIT external funding, balance guard, idempotency)
-- [x] Phase 5 — Outbox + Kafka + notification consumer
-  - [x] 5a — Transactional outbox (event written in the same commit as the ledger)
-  - [x] 5b — Publisher worker + Kafka + notification consumer (at-least-once, idempotent consumer)
-- [x] Phase 6 — Analytics consumer (idempotent rollups) & reconciliation (ledger-vs-balance drift check)
-- [x] Phase 7 — Redis balance cache (invalidate-on-write) + paginated transaction history
-- [x] Phase 8 — Airflow DAGs (reconciliation + analytics snapshot, opt-in & isolated)
-- [x] Phase 9 — Hardening (concurrency double-spend test) + observability (JSON logs, request IDs, Prometheus metrics, liveness/readiness)
-- [ ] Phase 10 — Docker image, Kubernetes, GCP deploy
+- [x] Phase 0 - Foundation (skeleton, Docker, config, migrations, TDD harness)
+- [x] Phase 1 - Users & wallets
+- [x] Phase 2 - Deposit (double-entry ledger, row locking, atomic commit)
+- [x] Phase 3 - Transfer (deadlock-safe lock ordering, idempotency keys, insufficient-funds guard)
+- [x] Phase 4 - Withdraw (DEBIT wallet / CREDIT external funding, balance guard, idempotency)
+- [x] Phase 5 - Outbox + Kafka + notification consumer
+  - [x] 5a - Transactional outbox (event written in the same commit as the ledger)
+  - [x] 5b - Publisher worker + Kafka + notification consumer (at-least-once, idempotent consumer)
+- [x] Phase 6 - Analytics consumer (idempotent rollups) & reconciliation (ledger-vs-balance drift check)
+- [x] Phase 7 - Redis balance cache (invalidate-on-write) + paginated transaction history
+- [x] Phase 8 - Airflow DAGs (reconciliation + analytics snapshot, opt-in & isolated)
+- [x] Phase 9 - Hardening (concurrency double-spend test) + observability (JSON logs, request IDs, Prometheus metrics, liveness/readiness)
+- [ ] Phase 10 - Docker image, Kubernetes, GCP deploy
