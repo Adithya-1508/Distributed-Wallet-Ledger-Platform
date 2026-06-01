@@ -80,6 +80,26 @@ it recomputes every wallet from the ledger and exits non-zero on any drift:
 uv run python -m app.jobs.run_reconciliation
 ```
 
+### Orchestration (Airflow)
+
+Reconciliation and the analytics snapshot are scheduled as Airflow DAGs in `dags/`.
+Airflow is **opt-in** and runs isolated — it pins older dependencies that conflict
+with the app's SQLAlchemy 2.0, so it can't share the app image:
+
+```bash
+docker compose --profile airflow up -d   # Airflow UI -> http://localhost:8080
+# the standalone admin password is printed in the airflow container logs
+```
+
+The DAGs (`wallet_reconciliation`, `wallet_analytics_snapshot`) shell out to the
+job modules rather than importing app code. Running them against the live DB is
+wired via Kubernetes (a `KubernetesPodOperator` on the app image) in phase 10;
+the local Airflow is for authoring and validating the DAGs. Validate they parse:
+
+```bash
+docker compose --profile airflow run --rm airflow airflow dags list-import-errors
+```
+
 ### Tests
 
 ```bash
@@ -103,6 +123,6 @@ uv run pytest                        # everything, incl. the Redpanda end-to-end
   - [x] 5b — Publisher worker + Kafka + notification consumer (at-least-once, idempotent consumer)
 - [x] Phase 6 — Analytics consumer (idempotent rollups) & reconciliation (ledger-vs-balance drift check)
 - [x] Phase 7 — Redis balance cache (invalidate-on-write) + paginated transaction history
-- [ ] Phase 8 — Airflow jobs
+- [x] Phase 8 — Airflow DAGs (reconciliation + analytics snapshot, opt-in & isolated)
 - [ ] Phase 9 — Test hardening + observability
 - [ ] Phase 10 — Docker image, Kubernetes, GCP deploy
