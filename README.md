@@ -98,7 +98,7 @@ uv run pytest                        # everything, incl. the Kafka end-to-end te
 - [x] Phase 2 — Deposit (double-entry ledger, row locking, atomic commit)
 - [x] Phase 3 — Transfer (deadlock-safe lock ordering, idempotency keys, insufficient-funds guard)
 - [x] Phase 4 — Withdraw (DEBIT wallet / CREDIT external funding, balance guard, idempotency)
-- [ ] Phase 5 — Outbox + Kafka + notification consumer
+- [x] Phase 5 — Outbox + Kafka + notification consumer
   - [x] 5a — Transactional outbox (event written in the same commit as the ledger)
   - [x] 5b — Publisher worker + Kafka + notification consumer (at-least-once, idempotent consumer)
 - [x] Phase 6 — Analytics consumer (idempotent rollups) & reconciliation (ledger-vs-balance drift check)
